@@ -211,3 +211,13 @@ cd ../out && zip -qr ../MyAddon-1.4.0-dev004.zip .
 | Changing a PR's base via the API is refused | Ask the author to change it in the GitHub UI |
 | Rules fails only in CI | The runner lacks a tool the script calls; install it in rules.yml (as lua5.1 is) |
 | A workflow in repo B must read private repo A | Add a fine-grained read-only token for A as a secret in B; make the job warn and pass when the secret is missing |
+
+## Mirroring production releases to another repo
+`release.yml` has a second job, `mirror`, that runs after a **production** release (no suffix) and publishes the same version on `MIRROR_REPO` (set at the top of the file) with the same zip. Pre-releases are not mirrored.
+- **Notes:** `tools/collect_notes.sh <version>` takes that version's history section and every section below it, down to the previous production version, so `1.5.0` covers every `1.5.0-devNNN` and `-devNNN_NN` build since `1.4.0`. `tools/summarize_notes.sh` sends them to the Claude API (`claude-opus-5-5`, effort low, server-side fallback on a refusal) for a short player-facing changelog under New / Changed / Fixed. Without the API key, or if the call fails, the notes are the plain bullet list with duplicates and "Version X" lines removed; the release is never held up.
+- **Secrets** (Settings > Secrets and variables > Actions on the addon repo):
+  - `MIRROR_TOKEN`: a fine-grained personal access token with **Contents: Read and write** on the mirror repo only. The built-in token cannot write to another repo. The job fails with a clear error without it.
+  - `ANTHROPIC_API_KEY`: optional, for the summary. Costs a few cents per production release.
+- **The mirror repo needs at least one commit**; the tag is created on its default branch.
+- **Retry:** the job skips anything already published, so after fixing a secret, run Actions > Release > Run workflow on main.
+- Try the notes locally: `sh tools/collect_notes.sh 1.5.0 > s.txt && sh tools/summarize_notes.sh 1.5.0 s.txt`.

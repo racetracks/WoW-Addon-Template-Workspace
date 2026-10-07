@@ -3,6 +3,11 @@
 # $ADDON and $ADDON_*, readme.txt and history.txt inside $ADDON; no .github or
 # tools), with that version's section of history.txt as the notes. Does nothing
 # if the release exists. Versions with a suffix (1.0.0-dev004) are pre-releases.
+# A production release (no suffix) is also published on $MIRROR_REPO with
+# the same zip and Claude-summarized notes covering every build since the
+# previous production release (job "mirror"). Secrets: MIRROR_TOKEN (contents
+# read and write on $MIRROR_REPO), ANTHROPIC_API_KEY (optional; without it
+# the notes are the plain list of changes).
 name: Release
 
 on:
@@ -15,10 +20,13 @@ permissions:
 
 env:
   ADDON: MyAddon   # main folder / TOC name
+  MIRROR_REPO: racetracks/WoW-Addon-Template   # where production releases are mirrored
 
 jobs:
   release:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
     steps:
       - uses: actions/checkout@v4
 
@@ -76,3 +84,56 @@ jobs:
           while read -r tag; do gh release edit "$tag" --prerelease; done
         env:
           GH_TOKEN: ${{ github.token }}
+
+  mirror:
+    needs: release
+    if: ${{ needs.release.outputs.version != '' && !contains(needs.release.outputs.version, '-') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the mirror
+        id: m
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::Add a MIRROR_TOKEN secret with contents read and write on $MIRROR_REPO"
+            exit 1
+          fi
+          if gh release view "v$VER" --repo "$MIRROR_REPO" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          VER: ${{ needs.release.outputs.version }}
+          GH_TOKEN: ${{ secrets.MIRROR_TOKEN }}
+
+      - name: Fetch the zip
+        if: steps.m.outputs.exists == 'false'
+        run: gh release download "v$VER" --pattern "$ADDON-$VER.zip"
+        env:
+          VER: ${{ needs.release.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Write the notes
+        if: steps.m.outputs.exists == 'false'
+        run: |
+          sh tools/collect_notes.sh "$VER" > sections.txt
+          {
+            echo "**Install:** extract the zip into \`World of Warcraft/_retail_/Interface/AddOns/\`."
+            echo
+            sh tools/summarize_notes.sh "$VER" sections.txt
+          } > notes.md
+          cat notes.md
+        env:
+          VER: ${{ needs.release.outputs.version }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Publish on the mirror
+        if: steps.m.outputs.exists == 'false'
+        run: |
+          gh release create "v$VER" "$ADDON-$VER.zip" --repo "$MIRROR_REPO" \
+            --title "$ADDON $VER" --notes-file notes.md --latest
+        env:
+          VER: ${{ needs.release.outputs.version }}
+          GH_TOKEN: ${{ secrets.MIRROR_TOKEN }}
