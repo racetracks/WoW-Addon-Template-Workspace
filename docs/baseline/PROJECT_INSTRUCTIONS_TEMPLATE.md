@@ -9,7 +9,7 @@ Read the WoW addon baseline pack (README, 02_RULES, 07_WORKING_WITH_THE_AUTHOR, 
 - No application or service logic in any UI folder. Minimal functions in the always-loaded core (the always-on engine and the launchpad); anything not regularly active goes in the load-on-demand library folder, with a measured resident cost.
 - Front ends are independent: a UI never reads another UI's folder; UI resources both need live in the library folder. One config table, assets in each UI's own folder.
 - One step per PR, based on main. Every change bumps all TOCs, adds a history.txt section and ships a test zip.
-- Non-production versions are X.Y.Z-devNNN (three digits, incrementing, never reused) and publish as GitHub pre-releases. Only production (the completed feature, when the author says so) has no suffix. Bugfixes are the next devNNN, zipped and hosted like any dev build.
+- Non-production versions are X.Y.Z-devNNN (three digits, incrementing, never reused) and publish as GitHub pre-releases. Only production (the completed feature, when the author says so) has no suffix. Fix builds of a stage are devNNN_01, devNNN_02 (two digits, never reused), zipped and hosted like any dev build; the zip name carries the full version.
 - Host test zips, handovers and saves as the hosting pack describes; always reply with links.
 - Before pushing: the rules check, the harness against the author's real saves, the look-compare for any window that changes.
 - SavedVariables must not grow; layout changes need a validated migration and the author's OK first.

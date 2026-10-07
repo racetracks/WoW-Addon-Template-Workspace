@@ -67,7 +67,7 @@ Nothing starts on stage N+1 until stage N is merged and has passed:
 | Test zip in game | Every PR | The author's numbered in-game checks pass on the real client and real saves |
 | Earlier stages | Every PR | Earlier stages' checks still pass (the harness keeps them) |
 
-If a stage fails in game: fix it as the next devNNN on the same line (a new PR from main) before the next planned stage. Never fold a fix into an unrelated stage.
+If a stage fails in game: fix it as that stage's next fix build, `devNNN_01`, `devNNN_02` (a new PR from main), before the next planned stage. Never fold a fix into an unrelated stage.
 
 ## 5. Finishing the feature
 - When every stage has merged and passed, run the full regression on the last devNNN.
@@ -80,5 +80,6 @@ A feature "show a breakdown chart in the options window", line `1.5.0`:
 2. `1.5.0-dev002`: add a capped per-type counter with a migration; validated on real saves; no UI.
 3. `1.5.0-dev003`: draw the chart in the native window behind a new option (default OFF); option-off check; in-game checks.
 4. `1.5.0-dev004`: the same chart in the suite front end from the same library call; numbers-match check.
-5. `1.5.0-dev005`: fixes from testing, readme.
-6. `1.5.0`: production release once the author confirms.
+5. `1.5.0-dev004_01`: a fix from testing the suite chart.
+6. `1.5.0-dev005`: polish, readme.
+7. `1.5.0`: production release once the author confirms.

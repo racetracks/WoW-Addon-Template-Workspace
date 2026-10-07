@@ -10,7 +10,7 @@ Every new project struggles with this. The whole pipeline is **two workflow file
 ## 2. Repo layout the workflows expect
 ```
 <Addon>/                    main addon folder (its name = the TOC name = ADDON in release.yml)
-  <Addon>.toc               base TOC: "## Version: X.Y.Z[-devNNN]" (the version is read from here)
+  <Addon>.toc               base TOC: "## Version: X.Y.Z[-devNNN[_NN]]" (the version is read from here)
   <Addon>_Mainline.toc      flavour TOCs, same version
   <Addon>_Camelot.toc
   *.lua
@@ -166,13 +166,14 @@ A version line belongs to a feature (or an agreed set of features), not to a dat
 | Kind | Example | Published as |
 | --- | --- | --- |
 | A stage of the feature | `1.4.0-dev001` .. `1.4.0-dev006` | **Pre-release** (suffix); the same zip is the stage's hosted test build |
-| A bugfix while the feature is in progress | the next devNNN on the line | **Pre-release**, like any stage |
+| A bugfix while the feature is in progress | the stage's next fix build: `1.4.0-dev003_01`, `1.4.0-dev003_02` | **Pre-release**, like any stage; zip `MyAddon-1.4.0-dev003_01.zip` |
 | The feature complete | `1.4.0` | **Full release**, only when the author confirms the feature is done |
 | A fix after the release | `1.4.1-dev001`, then `1.4.1` | Pre-release, then a full release |
 | The next feature | `1.5.0-dev001` | Pre-release |
 
 - **Every pre-release must carry a suffix.** The pipeline decides pre-release versus full release only from the version: any `-` makes it `--prerelease`, and the "mark older suffixed releases" step keeps every earlier `-devNNN` release flagged as a pre-release (so "Latest" always points at a real production build). A missing suffix publishes a full release by mistake, which the author must then delete by hand.
-- `-devNNN`: three digits, from dev001, incrementing, never reused within a line. One merged PR = one devNNN.
+- `-devNNN`: three digits, from dev001, incrementing, never reused within a line. One stage = one devNNN.
+- `-devNNN_NN`: fix build NN of stage devNNN, two digits from 01, never reused. The tag (`v1.4.0-dev003_01`), release title and zip name (`MyAddon-1.4.0-dev003_01.zip`) all come from this version, so nothing in release.yml changes. `sh tools/bump_version.sh fix "Title"` sets it; the rules check fails any other shape, TOCs that disagree, or a history.txt whose top section is another version.
 - The feature design (10_FEATURE_DESIGN_AND_DELIVERY.md) names the line and maps each stage to its devNNN before work starts.
 - **Going to production:** a PR that sets the plain `X.Y.0` in every TOC with a history section that sums up the whole feature. Merging it publishes the full release; the stage pre-releases stay as history.
 - Ask the author which line the next piece of work belongs to when it is not obvious (a new feature line or a fix line).
@@ -205,8 +206,18 @@ cd ../out && zip -qr ../MyAddon-1.4.0-dev004.zip .
 | Release notes empty | The history heading doesn't start with `=> <version> ` exactly |
 | Zip extracts into an extra folder | Zip built from the repo root instead of from inside the build folder |
 | A version merged before release.yml existed has no release | Expected. Bump to a new version (or run the workflow by hand while that version is on main) |
-| A broken release was published | Fix forward with the next devNNN. To redo the same version, the author deletes the release and its tag in the GitHub UI, then runs the workflow by hand |
+| A broken release was published | Fix forward with the next fix build (`devNNN_NN`). To redo the same version, the author deletes the release and its tag in the GitHub UI, then runs the workflow by hand |
 | Stacked PRs landed in a stale branch | PR B was based on PR A's branch and A merged first. Base every PR on main, or delete each base branch after merging so GitHub retargets the next PR. Merge the stranded work with a new PR from main |
 | Changing a PR's base via the API is refused | Ask the author to change it in the GitHub UI |
 | Rules fails only in CI | The runner lacks a tool the script calls; install it in rules.yml (as lua5.1 is) |
 | A workflow in repo B must read private repo A | Add a fine-grained read-only token for A as a secret in B; make the job warn and pass when the secret is missing |
+
+## Mirroring production releases to another repo
+`release.yml` has a second job, `mirror`, that runs after a **production** release (no suffix) and publishes the same version on `MIRROR_REPO` (set at the top of the file) with the same zip. Pre-releases are not mirrored.
+- **Notes:** `tools/collect_notes.sh <version>` takes that version's history section and every section below it, down to the previous production version, so `1.5.0` covers every `1.5.0-devNNN` and `-devNNN_NN` build since `1.4.0`. `tools/summarize_notes.sh` sends them to the Claude API (`claude-opus-5-5`, effort low, server-side fallback on a refusal) for a short player-facing changelog under New / Changed / Fixed. Without the API key, or if the call fails, the notes are the plain bullet list with duplicates and "Version X" lines removed; the release is never held up.
+- **Secrets** (Settings > Secrets and variables > Actions on the addon repo):
+  - `MIRROR_TOKEN`: a fine-grained personal access token with **Contents: Read and write** on the mirror repo only. The built-in token cannot write to another repo. The job fails with a clear error without it.
+  - `ANTHROPIC_API_KEY`: optional, for the summary. Costs a few cents per production release.
+- **The mirror repo needs at least one commit**; the tag is created on its default branch.
+- **Retry:** the job skips anything already published, so after fixing a secret, run Actions > Release > Run workflow on main.
+- Try the notes locally: `sh tools/collect_notes.sh 1.5.0 > s.txt && sh tools/summarize_notes.sh 1.5.0 s.txt`.

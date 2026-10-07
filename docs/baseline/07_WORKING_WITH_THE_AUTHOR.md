@@ -7,7 +7,7 @@
 2. **The author answers by number** ("1: yes 2: no, keep it 3: your call"). Play the final decisions back in the next reply before building.
 3. **One step at a time.** The author names a step from the feature's stage plan (10_FEATURE_DESIGN_AND_DELIVERY.md); Claude ships exactly that step: one branch from the latest main and one PR per repo; every TOC bumped to the next devNNN; a history section; checks green; a hosted test zip with the link; exact in-game checks.
 4. **The author tests in game and merges** before the next stage starts. Merging a version bump publishes the release (a pre-release for every suffixed version).
-5. **Bugs** found in testing become the next devNNN, zipped and hosted like any build.
+5. **Bugs** found in testing become the stage's next fix build (`devNNN_01`, `devNNN_02`), zipped and hosted like any build.
 6. **Long threads end with a handover**: this baseline plus an addon-specific pack.
 
 ## Communication

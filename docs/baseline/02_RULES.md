@@ -68,9 +68,9 @@ These are every rule the author has applied, written so they fit any addon. "Cor
 
 ## F. Versions and releases (09_RELEASE_PIPELINE.md)
 1. **Releases are defined by feature.** A feature, or an agreed set of features, owns one version line `X.Y.0`. Its design names the line before work starts (10_FEATURE_DESIGN_AND_DELIVERY.md).
-2. **Every build on that line before the feature is complete is `X.Y.0-devNNN`**: three digits, starting at dev001, incrementing, never reused. One merged PR = one devNNN. Example: `1.4.0-dev001` (first stage) to `1.4.0-dev006` (last stage).
+2. **Every build on that line before the feature is complete is `X.Y.0-devNNN`**: three digits, starting at dev001, incrementing, never reused. One stage = one devNNN. Example: `1.4.0-dev001` (first stage) to `1.4.0-dev006` (last stage).
 3. **Every pre-release must carry the suffix, so the pipeline tags it as a GitHub pre-release.** The release workflow marks any version containing `-` as a pre-release and keeps older suffixed releases marked as pre-releases. A build without a suffix is published as a full release, so never drop the suffix early.
-4. **Bugfixes** during a line ship as the next devNNN on that line: bump the TOCs, add a history section, build the zip, host it and give the author the link. After a production release, fixes start `X.Y.1-dev001` and ship as `X.Y.1`.
+4. **Bugfixes** to a stage ship as fix builds of that stage: `X.Y.0-devNNN_01`, then `_02` and so on (two digits, from 01, never reused). The next stage drops the fix suffix and moves to `dev(NNN+1)`. Each fix build bumps the TOCs, adds a history section, builds the zip (named with the full version, for example `MyAddon-1.4.0-dev003_02.zip`), hosts it and gives the author the link. `tools/bump_version.sh` works out the next number; the rules check fails any other version shape. After a production release, fixes start `X.Y.1-dev001` and ship as `X.Y.1`.
 5. **The production release is the completed feature.** Only when the author confirms the feature is done does a PR set the plain `X.Y.0` in every TOC, with a history section summing up the feature; merging it publishes the full release.
 6. The next feature starts the next line (`X.Y+1.0-dev001`), or `X+1.0.0-dev001` for a breaking change the author agrees to.
 

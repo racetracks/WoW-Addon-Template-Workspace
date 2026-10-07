@@ -59,7 +59,7 @@ How a new addon project runs from an empty repo to production releases and long-
 
 ## Phase 8: Maintenance
 - Each client patch: check interface numbers and API changes on wago.tools, bump the TOCs, run the harness.
-- Bugs become the next devNNN with a hosted zip and in-game checks.
+- Bugs become fix builds (`X.Y.1-dev001`, then `X.Y.1-dev001_01` for fixes to that build) with a hosted zip and in-game checks.
 - New work starts the next minor line (`X.Y+1.0-dev001`) with its own analysis and plan.
 - Track issues on the addon repo; small notes for an issue go beside the plans.
 
