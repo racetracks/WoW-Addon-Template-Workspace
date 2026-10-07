@@ -30,7 +30,7 @@ Where an addon-specific pack differs, it wins for that addon; the baseline is th
 - No application or service logic in any UI folder. Minimal functions in the always-loaded core (the always-on engine and the launchpad); anything not regularly active goes in the load-on-demand library folder, with a measured resident cost.
 - Front ends are independent: a UI never reads another UI's folder; UI resources both need live in the library folder. One config table, assets in each UI's own folder.
 - One step per PR, based on main. Every change bumps all TOCs, adds a history.txt section and ships a test zip.
-- Non-production versions are X.Y.Z-devNNN (three digits, incrementing, never reused) and publish as GitHub pre-releases. Only production (the completed feature, when the author says so) has no suffix. Bugfixes are the next devNNN, zipped and hosted like any dev build.
+- Non-production versions are X.Y.Z-devNNN (three digits, incrementing, never reused) and publish as GitHub pre-releases. Only production (the completed feature, when the author says so) has no suffix. Fix builds of a stage add a two-digit suffix: devNNN, then devNNN_01, devNNN_02 (never reused); the next stage is plain dev(NNN+1). The version names the TOCs, the tag, the release and the zip (MyAddon-X.Y.Z-devNNN_NN.zip). Bump with `sh tools/bump_version.sh stage|fix|release "Title"` (or `line X.Y.Z`); the rules check rejects any other shape.
 - Host test zips, handovers and saves as the hosting pack describes; always reply with links.
 - Before pushing: the rules check, the harness against the author's real saves, the look-compare for any window that changes.
 - SavedVariables must not grow; layout changes need a validated migration and the author's OK first.

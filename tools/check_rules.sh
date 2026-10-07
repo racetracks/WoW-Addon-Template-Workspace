@@ -6,6 +6,9 @@
 #   4. Tabs, not spaces: indentation, mid-line alignment and no trailing
 #      whitespace (tools/check_style.lua; --fix there repairs these)
 #   6. Core logic files hold no UI code (tools/check_layers.lua)
+#   7. Versions: every TOC carries the same version, shaped X.Y.Z (production),
+#      X.Y.Z-devNNN (a stage) or X.Y.Z-devNNN_NN (fix build NN of that stage),
+#      and history.txt starts with that version's section
 # Usage: sh tools/check_rules.sh   (from the repo root, needs luac5.1/lua5.1)
 
 fail=0
@@ -30,6 +33,25 @@ if [ -n "$xml" ] && grep -nP '^\t* |[ \t]+$' $xml; then
 fi
 
 lua5.1 tools/check_layers.lua || fail=1
+
+ver=$(sed -n 's/^## Version: *//p' MyAddon/MyAddon.toc | tr -d '\r')
+for toc in MyAddon*/*.toc; do
+	v=$(sed -n 's/^## Version: *//p' "$toc" | tr -d '\r')
+	if [ "$v" != "$ver" ]; then
+		echo "$toc: version '$v' differs from MyAddon/MyAddon.toc '$ver'"
+		fail=1
+	fi
+done
+if ! echo "$ver" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-dev[0-9]{3}(_[0-9]{2})?)?$' ||
+	echo "$ver" | grep -qE 'dev000|_00$'; then
+	echo "Version '$ver' must be X.Y.Z, X.Y.Z-devNNN or X.Y.Z-devNNN_NN (from dev001 and _01)"
+	fail=1
+fi
+top=$(sed -n 's/^=> \([^ ]*\) .*/\1/p' history.txt | head -n 1)
+if [ "$top" != "$ver" ]; then
+	echo "history.txt: the top section is '$top', the TOCs say '$ver'"
+	fail=1
+fi
 
 [ $fail -eq 0 ] && echo "All rule checks passed"
 exit $fail
