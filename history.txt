@@ -1,0 +1,4 @@
+=> 0.1.0-dev001 - First build
+- Empty addon that loads, creates its saved variables and answers /myaddon with its version.
+- Rules check and release pipeline in place.
+- Version 0.1.0-dev001.
